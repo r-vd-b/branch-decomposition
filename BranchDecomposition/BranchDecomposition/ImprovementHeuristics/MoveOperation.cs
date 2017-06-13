@@ -38,8 +38,9 @@ namespace BranchDecomposition.ImprovementHeuristics
 
         protected override double computeCost()
         {
-            double maximum = this.SelectedNode.SubTreeWidth, sum = this.SelectedNode.SubTreeSum;
-            DecompositionNode common = null;
+            double maximum = this.SelectedNode.SubTreeWidth, 
+                sum = this.SelectedNode.SubTreeSum,
+                topwidth = this.Tree.Root.Right.Width;
 
             if (!this.SelectedNode.Parent.Set.Intersects(this.SelectedSibling.Set))
             {
@@ -53,10 +54,21 @@ namespace BranchDecomposition.ImprovementHeuristics
                     maximum = width;
 
                 // the common ancestor
-                common = this.findCommonAncestor(this.SelectedNode.Parent, this.SelectedSibling);
+                DecompositionNode common = this.findCommonAncestor(this.SelectedNode.Parent, this.SelectedSibling);
                 sum += common.Width;
                 if (maximum < common.Width)
                     maximum = common.Width;
+
+                // update the width of the child of the root
+                if (common.IsRoot)
+                {
+                    BitSet set = this.Tree.Root.Right.Set;
+                    if (set.IsSupersetOf(this.SelectedNode.Set))
+                        set -= this.SelectedNode.Set;
+                    else
+                        set |= this.SelectedNode.Set;
+                    topwidth = this.Tree.WidthParameter.GetWidth(this.Tree.Graph, set);
+                }
 
                 // ancestors of parent
                 this.computeCost(this.SelectedNode.Parent, common, null, this.SelectedNode.Set, ref maximum, ref sum);
@@ -76,6 +88,9 @@ namespace BranchDecomposition.ImprovementHeuristics
                 if (maximum < this.SelectedSibling.Width)
                     maximum = this.SelectedSibling.Width;
 
+                // update the width of the child of the root.
+                if (this.SelectedSibling.IsRoot)
+                    topwidth = this.SelectedNode.Width;
 
                 // ancestors of parent
                 this.computeCost(this.SelectedNode.Parent, this.SelectedSibling.Parent, null, this.SelectedNode.Set, ref maximum, ref sum);
@@ -94,41 +109,17 @@ namespace BranchDecomposition.ImprovementHeuristics
                 if (maximum < width)
                     maximum = width;
 
+                // update the width of the child of the root.
+                if (this.SelectedNode.Parent.IsRoot)
+                    topwidth = this.OriginalSibling.Right.Set.IsSupersetOf(this.SelectedSibling.Set) ? this.OriginalSibling.Left.Width : this.OriginalSibling.Right.Width;
+
                 // ancestors of the new sibling
                 this.computeCost(this.SelectedSibling, this.SelectedNode.Parent, this.SelectedNode.Set, null, ref maximum, ref sum);
                 // common ancestors
                 this.computeCost(this.SelectedNode.Parent, null, null, null, ref maximum, ref sum);
             }
 
-            /*double topwidth = this.Tree.Root.Right.Width;
-            if (this.SelectedNode.Parent.IsRoot)
-            {
-                topwidth = this.OriginalSibling.Left.Set.Intersects(this.SelectedSibling.Set) ? this.OriginalSibling.Right.Width : this.OriginalSibling.Left.Width;
-            }
-            else if (this.SelectedNode.Parent.Parent.IsRoot)
-            {
-                if (this.SelectedSibling.Set.IsSubsetOf(this.OriginalSibling.Set))
-                {
-                    topwidth = this.SelectedNode.Parent.Width;
-                }
-                else
-                {
-                    topwidth = this.OriginalSibling.Width;
-                }
-            }
-            else if (comm)*/
-            double topwidth = 0;
-
-            double cost = DecompositionTree.ComputeCost(maximum, this.Tree.Size, sum, topwidth);
-            double actualcost = this.Execute();
-
-            if (Math.Abs(cost - actualcost) > 0.0001)
-                throw new InvalidOperationException();
-
-
-            this.Revert();
-
-            return cost;
+            return DecompositionTree.ComputeCost(maximum, this.Tree.Size, sum, topwidth);
         }
 
         private void computeCost(DecompositionNode child, DecompositionNode end, BitSet add, BitSet remove, ref double maximum, ref double sum)

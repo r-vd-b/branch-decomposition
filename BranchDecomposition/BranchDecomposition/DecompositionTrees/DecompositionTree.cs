@@ -15,7 +15,7 @@ namespace BranchDecomposition.DecompositionTrees
         public int Size { get { return this.Graph.Vertices.Count; } }
 
         public double Width { get { return this.Root.SubTreeWidth; } }
-        public double Cost { get { return this.Root.SubTreeWidth * this.Size * this.Size + this.Root.SubTreeSum/* - (this.Root?.Right?.Width ?? 0)*/; } }
+        public double Cost { get { return this.Root.SubTreeWidth * this.Size * this.Size + this.Root.SubTreeSum - (this.Root?.Right?.Width ?? 0); } }
         
         public DecompositionTree(Graph graph, WidthParameter parameter)
         {
