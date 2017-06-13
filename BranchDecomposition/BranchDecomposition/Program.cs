@@ -30,6 +30,7 @@ namespace BranchDecomposition
             Console.WriteLine($"Best cost = {tree.Cost}");
             Console.WriteLine("Best tree decomposition:");
             Console.WriteLine(tree.Root);
+            Console.ReadLine();
         }
     }
 }
