@@ -8,7 +8,6 @@ namespace BranchDecomposition.DecompositionTrees
 
     class DecompositionTree
     {
-
         public Graph Graph { get; }
         public WidthParameter WidthParameter { get; }
         public DecompositionNode[] Nodes { get; }
@@ -16,7 +15,7 @@ namespace BranchDecomposition.DecompositionTrees
         public int Size { get { return this.Graph.Vertices.Count; } }
 
         public double Width { get { return this.Root.SubTreeWidth; } }
-        public double Cost { get { return this.Root.SubTreeWidth * this.Size * this.Size + this.Root.SubTreeSum - (this.Root?.Right?.Width ?? 0); } }
+        public double Cost { get { return this.Root.SubTreeWidth * this.Size * this.Size + this.Root.SubTreeSum/* - (this.Root?.Right?.Width ?? 0)*/; } }
         
         public DecompositionTree(Graph graph, WidthParameter parameter)
         {
@@ -150,6 +149,11 @@ namespace BranchDecomposition.DecompositionTrees
         public override string ToString()
         {
             return $"|V|={this.Nodes.Length}, Width={this.Width}, Cost={this.Cost}";
+        }
+
+        public static double ComputeCost(double maximumWidth, int numberOfVertices, double sumOfWidths, double topWidth)
+        {
+            return maximumWidth * numberOfVertices * numberOfVertices + sumOfWidths - topWidth;
         }
     }
 }

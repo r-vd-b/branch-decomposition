@@ -26,10 +26,7 @@ namespace BranchDecomposition.ImprovementHeuristics
             get
             {
                 if (this.cost < 0)
-                {
-                    this.cost = this.Execute();
-                    this.Revert();
-                }
+                    this.cost = this.computeCost();
                 return this.cost;
             }
         }
@@ -46,12 +43,21 @@ namespace BranchDecomposition.ImprovementHeuristics
         public virtual double Execute()
         {
             this.Tree.ComputeWidth();
-            return this.cost = this.Tree.Cost;
+            if (this.cost < 0)
+                this.cost = this.Tree.Cost;
+            return this.Tree.Cost;
         }
 
         /// <summary>
         /// Reverts a transformed tree back to its original state.
         /// </summary>
         public abstract void Revert();
+
+        protected virtual double computeCost()
+        {
+            double cost = this.Execute();
+            this.Revert();
+            return cost;
+        }
     }
 }
