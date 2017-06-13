@@ -101,7 +101,7 @@ namespace BranchDecomposition.ConstructionHeuristics
         /// <param name="index">The index of the vertex in the tree.</param>
         protected void add(DecompositionTree tree, Vertex vertex, double width, int index)
         {
-            DecompositionNode child = new DecompositionNode(vertex, index, 1, tree);
+            DecompositionNode child = new DecompositionNode(vertex, index, tree);
 
             if (tree.Root == null)
                 tree.AddNode(child, null, null);

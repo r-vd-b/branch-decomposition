@@ -56,7 +56,9 @@ namespace BranchDecomposition.DecompositionTrees
             this.Set = set;
         }
 
-        public DecompositionNode(Vertex vertex, int index, double width, DecompositionTree tree) : this(new BitSet(tree.Size, vertex.Index), index, width, tree)
+        public DecompositionNode(BitSet set, int index, DecompositionTree tree) : this(set, index, tree.WidthParameter.GetWidth(tree.Graph, set), tree) { }
+
+        public DecompositionNode(Vertex vertex, int index, DecompositionTree tree) : this(new BitSet(tree.Size, vertex.Index), index, tree)
         {
             this.vertex = vertex;
         }
