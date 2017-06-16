@@ -13,6 +13,8 @@ namespace BranchDecomposition.WidthParameters
     {
         protected WidthCache Cache;
 
+        public string Name { get; protected set; }
+
         public WidthParameter()
         {
             this.Cache = new WidthCache();
