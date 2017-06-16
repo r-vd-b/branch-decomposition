@@ -23,24 +23,21 @@ namespace BranchDecomposition.ImprovementHeuristics
 
         public override double Execute()
         {
-            this.Tree.ReplaceByChild(this.SelectedNode.Parent, this.OriginalSibling);
-            this.Tree.InsertAsSibling(this.SelectedNode.Parent, this.SelectedSibling);
+            this.updateTree(this.OriginalSibling, this.SelectedSibling);
             return base.Execute();
         }
 
         public override void Revert()
         {
-            this.Tree.ReplaceByChild(this.SelectedNode.Parent, this.SelectedSibling);
-            this.Tree.InsertAsSibling(this.SelectedNode.Parent, this.OriginalSibling);
-            this.Tree.ComputeWidth();
+            this.updateTree(this.SelectedSibling, this.OriginalSibling);
         }
-
 
         protected override double computeCost()
         {
             double maximum = this.SelectedNode.SubTreeWidth, 
                 sum = this.SelectedNode.SubTreeSum,
                 topwidth = this.Tree.Root.Right.Width;
+            DecompositionNode common = null;
 
             if (!this.SelectedNode.Parent.Set.Intersects(this.SelectedSibling.Set))
             {
@@ -54,7 +51,7 @@ namespace BranchDecomposition.ImprovementHeuristics
                     maximum = width;
 
                 // the common ancestor
-                DecompositionNode common = this.findCommonAncestor(this.SelectedNode.Parent, this.SelectedSibling);
+                common = this.findCommonAncestor(this.SelectedNode.Parent, this.SelectedSibling);
                 sum += common.Width;
                 if (maximum < common.Width)
                     maximum = common.Width;
@@ -71,11 +68,9 @@ namespace BranchDecomposition.ImprovementHeuristics
                 }
 
                 // ancestors of parent
-                this.computeCost(this.SelectedNode.Parent, common, null, this.SelectedNode.Set, ref maximum, ref sum);
+                this.costAncestors(this.SelectedNode.Parent, common, null, this.SelectedNode.Set, ref maximum, ref sum);
                 // ancestors of the new sibling
-                this.computeCost(this.SelectedSibling, common, this.SelectedNode.Set, null, ref maximum, ref sum);
-                // common ancestors
-                this.computeCost(common, null, null, null, ref maximum, ref sum);
+                this.costAncestors(this.SelectedSibling, common, this.SelectedNode.Set, null, ref maximum, ref sum);
             }
             else if (this.SelectedNode.Set.IsSubsetOf(this.SelectedSibling.Set))
             {
@@ -88,14 +83,15 @@ namespace BranchDecomposition.ImprovementHeuristics
                 if (maximum < this.SelectedSibling.Width)
                     maximum = this.SelectedSibling.Width;
 
+                // the common ancestor
+                common = this.SelectedSibling;
+
                 // update the width of the child of the root.
                 if (this.SelectedSibling.IsRoot)
                     topwidth = this.SelectedNode.Width;
 
                 // ancestors of parent
-                this.computeCost(this.SelectedNode.Parent, this.SelectedSibling.Parent, null, this.SelectedNode.Set, ref maximum, ref sum);
-                // common ancestors
-                this.computeCost(this.SelectedSibling, null, null, null, ref maximum, ref sum);
+                this.costAncestors(this.SelectedNode.Parent, this.SelectedSibling.Parent, null, this.SelectedNode.Set, ref maximum, ref sum);
             }
             else // the new sibling is a descendant of the original sibling
             {
@@ -109,20 +105,24 @@ namespace BranchDecomposition.ImprovementHeuristics
                 if (maximum < width)
                     maximum = width;
 
+                // the common ancestor
+                common = this.SelectedNode.Parent;
+
                 // update the width of the child of the root.
                 if (this.SelectedNode.Parent.IsRoot)
                     topwidth = this.OriginalSibling.Right.Set.IsSupersetOf(this.SelectedSibling.Set) ? this.OriginalSibling.Left.Width : this.OriginalSibling.Right.Width;
 
                 // ancestors of the new sibling
-                this.computeCost(this.SelectedSibling, this.SelectedNode.Parent, this.SelectedNode.Set, null, ref maximum, ref sum);
-                // common ancestors
-                this.computeCost(this.SelectedNode.Parent, null, null, null, ref maximum, ref sum);
+                this.costAncestors(this.SelectedSibling, this.SelectedNode.Parent, this.SelectedNode.Set, null, ref maximum, ref sum);
             }
+
+            // common ancestors
+            this.costAncestors(common, null, null, null, ref maximum, ref sum);
 
             return DecompositionTree.ComputeCost(maximum, this.Tree.Size, sum, topwidth);
         }
 
-        private void computeCost(DecompositionNode child, DecompositionNode end, BitSet add, BitSet remove, ref double maximum, ref double sum)
+        private void costAncestors(DecompositionNode child, DecompositionNode end, BitSet add, BitSet remove, ref double maximum, ref double sum)
         {
             for (DecompositionNode ancestor = child?.Parent; ancestor != end && ancestor != null; child = ancestor, ancestor = ancestor.Parent)
             {
@@ -147,6 +147,101 @@ namespace BranchDecomposition.ImprovementHeuristics
                 if (ancestor.Set.IsSupersetOf(n2.Set))
                     return ancestor;
             return null;
+        }
+
+        private void updateTree(DecompositionNode oldsibling, DecompositionNode newsibling)
+        {
+            DecompositionNode grandparent = this.SelectedNode.Parent.Parent;
+            Branch parentbranch = this.SelectedNode.Parent.Branch;
+            // connect parent to parent of new sibling
+            this.SelectedNode.Parent.Parent = newsibling.Parent;
+            if (newsibling.IsRoot)
+                this.Tree.Root = this.SelectedNode.Parent;
+            else
+            {
+                newsibling.Parent.SetChild(newsibling.Branch, this.SelectedNode.Parent);
+                this.SelectedNode.Parent.Branch = newsibling.Branch;
+            }
+            // connect new sibling to parent
+            newsibling.Parent = this.SelectedNode.Parent;
+            this.SelectedNode.Parent.SetChild(oldsibling.Branch, newsibling);
+            newsibling.Branch = oldsibling.Branch;
+            // connect old sibling to grandparent
+            oldsibling.Parent = grandparent;
+            if (grandparent == null)
+                this.Tree.Root = oldsibling;
+            else
+            {
+                grandparent.SetChild(parentbranch, oldsibling);
+                oldsibling.Branch = parentbranch;
+            }
+
+            // update the sets and width properties
+            DecompositionNode common = null;
+            if (!this.SelectedNode.Parent.Set.Intersects(newsibling.Set))
+            {
+                // parent
+                this.SelectedNode.Parent.Set = this.SelectedNode.Set | newsibling.Set;
+                this.SelectedNode.Parent.UpdateWidthProperties();
+
+                // the common ancestor
+                common = this.findCommonAncestor(this.SelectedNode.Parent, oldsibling.Parent);
+
+                // ancestors of parent
+                this.updateAncestors(this.SelectedNode.Parent, common, this.SelectedNode.Set, null);
+                // ancestors of the old sibling
+                this.updateAncestors(oldsibling, common, null, this.SelectedNode.Set);
+
+                common.UpdateWidthProperties(false);
+            }
+            else if (this.SelectedNode.Set.IsSubsetOf(newsibling.Set))
+            {
+                // the common ancestor
+                common = this.SelectedNode.Parent;
+                // ancestors of oldsibling
+                this.updateAncestors(oldsibling, common, null, this.SelectedNode.Set);
+
+                // parent
+                this.SelectedNode.Parent.Set = this.SelectedNode.Set | newsibling.Set;
+                this.SelectedNode.Parent.UpdateWidthProperties();
+            }
+            else // the new sibling is a descendant of the original sibling
+            {
+                // parent
+                this.SelectedNode.Parent.Set = this.SelectedNode.Set | newsibling.Set;
+                this.SelectedNode.Parent.UpdateWidthProperties();
+
+                // the common ancestor
+                common = oldsibling.Parent;
+
+                // ancestors of the new sibling
+                this.updateAncestors(this.SelectedNode.Parent, common, this.SelectedNode.Set, null);
+
+                if (common != null)
+                    common.UpdateWidthProperties(false);
+            }
+
+            this.updateAncestors(common, null, null, null);
+        }
+
+        private void updateAncestors(DecompositionNode child, DecompositionNode end, BitSet add, BitSet remove)
+        {
+            if (child == null)
+                return;
+
+            for (DecompositionNode ancestor = child.Parent; ancestor != end && ancestor != null; child = ancestor, ancestor = ancestor.Parent)
+            {
+                if (add != null || remove != null)
+                {
+                    if (add != null)
+                        ancestor.Set.Or(add);
+                    if (remove != null)
+                        ancestor.Set.Exclude(remove);
+                    ancestor.UpdateWidthProperties();
+                }
+                else
+                    ancestor.UpdateWidthProperties(false);
+            }
         }
     }
 }

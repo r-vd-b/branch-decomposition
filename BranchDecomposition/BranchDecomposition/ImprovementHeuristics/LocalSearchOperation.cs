@@ -42,7 +42,6 @@ namespace BranchDecomposition.ImprovementHeuristics
         /// <returns>The cost of the decomposition tree after the transformation.</returns>
         public virtual double Execute()
         {
-            this.Tree.ComputeWidth();
             if (this.cost < 0)
                 this.cost = this.Tree.Cost;
             return this.Tree.Cost;

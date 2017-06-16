@@ -11,7 +11,7 @@ namespace BranchDecomposition.DecompositionTrees
         public Graph Graph { get; }
         public WidthParameter WidthParameter { get; }
         public DecompositionNode[] Nodes { get; }
-        public DecompositionNode Root { get; protected set; }
+        public DecompositionNode Root { get; set; }
         public int Size { get { return this.Graph.Vertices.Count; } }
 
         public double Width { get { return this.Root.SubTreeWidth; } }
@@ -80,69 +80,6 @@ namespace BranchDecomposition.DecompositionTrees
                 parent.Right = sibling;
                 sibling.Branch = Branch.Right;
                 sibling.Parent = parent;
-            }
-        }
-
-        /// <summary>
-        /// Replaces a parent by its child in the tree.
-        /// </summary>
-        /// <param name="parent">The parent to be replaced.</param>
-        /// <param name="child">The replacement.</param>
-        /// <param name="updateAncestorSets">Should the sets of all ancestors be updated as well?</param>
-        public void ReplaceByChild(DecompositionNode parent, DecompositionNode child, bool updateAncestorSets = true)
-        {
-            // Remove the child from the parent.
-            parent.SetChild(child.Branch, null);
-            parent.Set.Exclude(child.Set);
-            // Attach the child to its grandparent.
-            child.Parent = parent.Parent;
-            if (parent.IsRoot)
-                this.Root = child;
-            else
-            {
-                parent.Parent.SetChild(parent.Branch, child);
-                child.Branch = parent.Branch;
-                // Update the ancestors of the child.
-                if (updateAncestorSets)
-                {
-                    BitSet removed = parent.GetChild(parent.Left == null ? Branch.Right : Branch.Left).Set;
-                    for (DecompositionNode ancestor = child.Parent; ancestor != null; ancestor = ancestor.Parent)
-                        ancestor.Set.Exclude(removed);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Insert the node as the sibling of a node in the tree.
-        /// </summary>
-        /// <param name="node">The node to be inserted.</param>
-        /// <param name="sibling">The new sibling of the tree.</param>
-        /// <param name="updateAncestorSets">Should the sets of all ancestors be updated as well?</param>
-        public void InsertAsSibling(DecompositionNode node, DecompositionNode sibling, bool updateAncestorSets = true)
-        {
-            // Attach the node to the parent of the child.
-            node.Parent = sibling.Parent;
-            if (sibling.IsRoot)
-                this.Root = node;
-            else
-            {
-                sibling.Parent.SetChild(sibling.Branch, node);
-                node.Branch = sibling.Branch;
-            }
-
-            // Attach the child to the node.
-            sibling.Parent = node;
-            Branch branch = node.Left == null ? Branch.Left : Branch.Right;
-            node.SetChild(branch, sibling);
-            sibling.Branch = branch;
-            node.Set.Or(sibling.Set);
-
-            // Update the ancestors of the child.
-            if (updateAncestorSets)
-            {
-                BitSet added = sibling.Sibling.Set;
-                for (DecompositionNode ancestor = node.Parent; ancestor != null; ancestor = ancestor.Parent)
-                    ancestor.Set.Or(added);
             }
         }
         
