@@ -307,27 +307,28 @@ namespace BranchDecomposition
             return this;
         }
 
-        public List<int> ToList()
+        public int[] ToArray()
         {
-            List<int> result = new List<int>();
-            foreach (int index in this)
-                result.Add(index);
-            return result;
-        }
+            int[] result = new int[this.Count];
+            int arrayindex = 0;
+            for (int i = 0; i < this.container.Length; i++)
+            {
+                int bitindex = elementSize * i;
+                for (ulong element = this.container[i]; element != 0; element = element >> 4, bitindex += 4)
+                {
+                    if ((element & 15ul) == 0)
+                        continue;
 
-        public List<T> ToList<T>(IList<T> elements)
-        {
-            List<T> result = new List<T>();
-            foreach (int index in this)
-                result.Add(elements[index]);
-            return result;
-        }
-
-        public List<T> ToList<T>(Func<int, T> selector)
-        {
-            List<T> result = new List<T>();
-            foreach (int index in this)
-                result.Add(selector(index));
+                    if ((element & 1ul) == 1ul)
+                        result[arrayindex++] = bitindex;
+                    if ((element & 2ul) == 2ul)
+                        result[arrayindex++] = bitindex + 1;
+                    if ((element & 4ul) == 4ul)
+                        result[arrayindex++] = bitindex + 2;
+                    if ((element & 8ul) == 8ul)
+                        result[arrayindex++] = bitindex + 3;
+                }
+            }
             return result;
         }
         #endregion
@@ -415,11 +416,19 @@ namespace BranchDecomposition
             for (int i = 0; i < this.container.Length; i++)
             {
                 int index = elementSize * i;
-                for (ulong element = this.container[i]; element != 0; element = element >> 1)
+                for (ulong element = this.container[i]; element != 0; element = element >> 4, index += 4)
                 {
+                    if ((element & 15ul) == 0)
+                        continue;
+
                     if ((element & 1ul) == 1ul)
                         yield return index;
-                    index++;
+                    if ((element & 2ul) == 2ul)
+                        yield return index + 1;
+                    if ((element & 4ul) == 4ul)
+                        yield return index + 2;
+                    if ((element & 8ul) == 8ul)
+                        yield return index + 3;
                 }
             }
         }
