@@ -11,7 +11,7 @@ namespace BranchDecomposition.DecompositionTrees
         public Graph Graph { get; }
         public WidthParameter WidthParameter { get; }
         public DecompositionNode[] Nodes { get; }
-        public DecompositionNode Root { get; set; }
+        public DecompositionNode Root { get; protected set; }
         public int Size { get { return this.Graph.Vertices.Count; } }
 
         public double Width { get { return this.Root.SubTreeWidth; } }
@@ -44,43 +44,14 @@ namespace BranchDecomposition.DecompositionTrees
             this.Nodes[index] = node;
         }
 
-        /// <summary>
-        /// Add a node to the tree.
-        /// </summary>
-        /// <param name="add">The node that will be added to the tree.</param>
-        /// <param name="sibling">The node in the tree selected to become the sibling of the added node.</param>
-        /// <param name="parent">The new parent of the added node and the selected sibling.</param>
-        public void AddNode(DecompositionNode add, DecompositionNode sibling, DecompositionNode parent)
+        public void Attach(DecompositionNode parent, DecompositionNode child, Branch branch)
         {
-            this.Nodes[add.Index] = add;
-            if (this.Root == null)
-            {
-                this.Root = add;
-            }
+            child.Parent = parent;
+            child.Branch = branch;
+            if (parent == null)
+                this.Root = child;
             else
-            {
-                this.Nodes[parent.Index] = parent;
-
-                // connect parent to parent of sibling
-                parent.Parent = sibling.Parent;
-                if (sibling.Parent != null)
-                {
-                    sibling.Parent.SetChild(sibling.Branch, parent);
-                    parent.Branch = sibling.Branch;
-                }
-                else
-                {
-                    this.Root = parent;
-                }
-
-                // connect node and sibling to parent
-                parent.Left = add;
-                add.Branch = Branch.Left;
-                add.Parent = parent;
-                parent.Right = sibling;
-                sibling.Branch = Branch.Right;
-                sibling.Parent = parent;
-            }
+                parent.SetChild(branch, child);
         }
         
         public override string ToString()

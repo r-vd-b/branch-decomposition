@@ -154,27 +154,11 @@ namespace BranchDecomposition.ImprovementHeuristics
             DecompositionNode grandparent = this.SelectedNode.Parent.Parent;
             Branch parentbranch = this.SelectedNode.Parent.Branch;
             // connect parent to parent of new sibling
-            this.SelectedNode.Parent.Parent = newsibling.Parent;
-            if (newsibling.IsRoot)
-                this.Tree.Root = this.SelectedNode.Parent;
-            else
-            {
-                newsibling.Parent.SetChild(newsibling.Branch, this.SelectedNode.Parent);
-                this.SelectedNode.Parent.Branch = newsibling.Branch;
-            }
+            this.Tree.Attach(newsibling.Parent, this.SelectedNode.Parent, newsibling.Branch);
             // connect new sibling to parent
-            newsibling.Parent = this.SelectedNode.Parent;
-            this.SelectedNode.Parent.SetChild(oldsibling.Branch, newsibling);
-            newsibling.Branch = oldsibling.Branch;
+            this.Tree.Attach(this.SelectedNode.Parent, newsibling, oldsibling.Branch);
             // connect old sibling to grandparent
-            oldsibling.Parent = grandparent;
-            if (grandparent == null)
-                this.Tree.Root = oldsibling;
-            else
-            {
-                grandparent.SetChild(parentbranch, oldsibling);
-                oldsibling.Branch = parentbranch;
-            }
+            this.Tree.Attach(grandparent, oldsibling, parentbranch);
 
             // update the sets and width properties
             DecompositionNode common = null;

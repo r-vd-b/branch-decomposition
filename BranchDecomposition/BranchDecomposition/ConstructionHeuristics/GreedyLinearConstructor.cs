@@ -11,11 +11,11 @@ namespace BranchDecomposition.ConstructionHeuristics
     /// <summary>
     /// A class to construct a linear decomposition tree from a graph.
     /// </summary>
-    class RandomizeGreedyLinearConstructor : ConstructionHeuristic
+    class GreedyLinearConstructor : ConstructionHeuristic
     {
         protected Random random { get; set; }
 
-        public RandomizeGreedyLinearConstructor(Random random) : base()
+        public GreedyLinearConstructor(Random random) : base()
         {
             this.random = random;
         }
@@ -38,7 +38,7 @@ namespace BranchDecomposition.ConstructionHeuristics
 
             BitSet neighborhood = new BitSet(start.Neighborhood);
 
-            this.add(result, start, 1, index++);
+            this.add(result, start, index++);
 
             while (!rightbits.IsEmpty)
             {
@@ -65,7 +65,7 @@ namespace BranchDecomposition.ConstructionHeuristics
                 neighborhood.Or(selected.Neighborhood);
                 neighborhood[selected.Index] = false;
 
-                this.add(result, selected, best, index);
+                this.add(result, selected, index);
                 index += 2;
             }
 
@@ -85,9 +85,13 @@ namespace BranchDecomposition.ConstructionHeuristics
             foreach (int index in right)
             {
                 Vertex v = graph.Vertices[index];
-                if (!(v.Neighborhood & leftneighborhoodset).IsEmpty || v.AdjacencyList.Count == 0)
+                if (!(v.Neighborhood & leftneighborhoodset).IsEmpty)
                     result.Add(v);
             }
+
+            if (result.Count == 0)
+                foreach (int index in right)
+                    result.Add(graph.Vertices[index]);
 
             return result;
         }
@@ -97,23 +101,26 @@ namespace BranchDecomposition.ConstructionHeuristics
         /// </summary>
         /// <param name="tree">The partial tree.</param>
         /// <param name="vertex">The vertex that will be added.</param>
-        /// <param name="width">The width of the parent of the vertex in the tree.</param>
         /// <param name="index">The index of the vertex in the tree.</param>
-        protected void add(DecompositionTree tree, Vertex vertex, double width, int index)
+        protected void add(DecompositionTree tree, Vertex vertex, int index)
         {
+            // Create the child node.
             DecompositionNode child = new DecompositionNode(vertex, index, tree);
+            tree.Nodes[index] = child;
 
             if (tree.Root == null)
-                tree.AddNode(child, null, null);
+                tree.Attach(null, child, Branch.Left);
             else
             {
-                BitSet rootset = new BitSet(tree.Root.Set);
-                rootset[vertex.Index] = true;
-                DecompositionNode root = new DecompositionNode(rootset, index + 1, width, tree);
-                tree.AddNode(child, tree.Root, root);
+                BitSet set = new BitSet(tree.Root.Set);
+                set[vertex.Index] = true;
+                DecompositionNode parent = new DecompositionNode(set, index + 1, tree);
+                tree.Nodes[index + 1] = parent;
 
-                root.SubTreeWidth = Math.Max(root.Width, Math.Max(root.Right.SubTreeWidth, root.Left.SubTreeWidth));
-                root.SubTreeSum = root.Width + root.Right.SubTreeSum + root.Left.SubTreeSum;
+                tree.Attach(parent, tree.Root, Branch.Right);
+                tree.Attach(parent, child, Branch.Left);
+                tree.Attach(null, parent, Branch.Left);
+                parent.UpdateWidthProperties(false);
             }
         }
     }

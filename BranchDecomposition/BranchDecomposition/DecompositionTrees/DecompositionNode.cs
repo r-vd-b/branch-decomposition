@@ -48,15 +48,13 @@ namespace BranchDecomposition.DecompositionTrees
         // The vertex field is only set for leaf nodes.
         protected Vertex vertex { get; }
 
-        public DecompositionNode(BitSet set, int index, double width, DecompositionTree tree)
+        public DecompositionNode(BitSet set, int index, DecompositionTree tree)
         {
             this.Tree = tree;
             this.Index = index;
-            this.SubTreeWidth = this.SubTreeSum = this.Width = width;
+            this.SubTreeWidth = this.SubTreeSum = this.Width = tree.WidthParameter.GetWidth(tree.Graph, set);
             this.Set = set;
         }
-
-        public DecompositionNode(BitSet set, int index, DecompositionTree tree) : this(set, index, tree.WidthParameter.GetWidth(tree.Graph, set), tree) { }
 
         public DecompositionNode(Vertex vertex, int index, DecompositionTree tree) : this(new BitSet(tree.Size, vertex.Index), index, tree)
         {
