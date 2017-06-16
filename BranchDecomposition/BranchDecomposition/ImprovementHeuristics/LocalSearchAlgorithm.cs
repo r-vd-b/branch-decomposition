@@ -15,6 +15,8 @@ namespace BranchDecomposition.ImprovementHeuristics
     {
         public int MaximumComputationTime { get; protected set; }
         public double CurrentComputationTime { get { return this.stopwatch.ElapsedMilliseconds / 1000.0; } }
+        public int Iterations { get; protected set; }
+        public int ExploredSolutions { get; protected set; }
 
         protected LocalSearchGraphSolution[] solutions { get; }
         protected LocalSearchOperator[] operators { get; }
@@ -44,9 +46,11 @@ namespace BranchDecomposition.ImprovementHeuristics
         public virtual DecompositionTree[] Run(int duration = -1)
         {
             this.MaximumComputationTime = duration;
+            this.ExploredSolutions = this.Iterations = 0;
             this.startTimer();
             while (!(this.MaximumComputationTime > 0 && this.CurrentComputationTime > this.MaximumComputationTime))
             {
+                this.Iterations++;
                 if (!this.PerformIteration())
                     break;
             }
@@ -109,8 +113,11 @@ namespace BranchDecomposition.ImprovementHeuristics
         {
             foreach (var op in this.operators)
                 foreach (var operation in op.Operations(this.focus.CurrentSolution, this.randomNumberGenerator))
+                {
+                    this.ExploredSolutions++;
                     if (operation.Cost < this.cost)
                         return operation;
+                }
             return null;
         }
     }
@@ -128,11 +135,14 @@ namespace BranchDecomposition.ImprovementHeuristics
             double cost = this.cost;
             foreach (var op in this.operators)
                 foreach (var operation in op.Operations(this.focus.CurrentSolution, this.randomNumberGenerator))
+                {
+                    this.ExploredSolutions++;
                     if (operation.Cost < cost)
                     {
                         candidate = operation;
                         cost = candidate.Cost;
                     }
+                }
             return candidate;
         }
     }
@@ -198,7 +208,7 @@ namespace BranchDecomposition.ImprovementHeuristics
     /// </summary>
     class SimulatedAnnealing : LocalSearchAlgorithm
     {
-        public int FailedIterationsUntilReset { get; } = 500;
+        public int FailedIterationsUntilReset { get; } = 1000;
 
         protected const double ALPHA = 0.97;
         protected double[] Ts { get; }
@@ -265,7 +275,7 @@ namespace BranchDecomposition.ImprovementHeuristics
                 var focus = this.focus;
                 if (focus != this.UpdateFocus())
                     this.Q = this.computeCoolingInterval(this.T, this.targetT, (int)(this.MaximumComputationTime - this.CurrentComputationTime));
-                Console.WriteLine($"{this.CurrentComputationTime.ToString("N0")}: {this.focus.CurrentSolution.Width.ToString("N2")} {this.focus.CurrentSolution.Cost.ToString("N0")} | T={this.T.ToString("N2")}");
+                //Console.WriteLine($"{this.CurrentComputationTime.ToString("N0")}: {this.focus.CurrentSolution.Width.ToString("N2")} {this.focus.CurrentSolution.Cost.ToString("N0")} | T={this.T.ToString("N2")}");
             }
             else
             {
@@ -277,7 +287,7 @@ namespace BranchDecomposition.ImprovementHeuristics
                 }
                 else if (this.acceptDeterioration(candidate.Cost - this.focus.CurrentSolution.Cost, this.T))
                 {
-                    Console.WriteLine($"Accepted deterioration of size {(candidate.Cost - this.focus.CurrentSolution.Cost).ToString("N0")}, rejection {this.iterationsWithoutImprovement}");
+                    //Console.WriteLine($"Accepted deterioration of size {(candidate.Cost - this.focus.CurrentSolution.Cost).ToString("N0")}, rejection {this.iterationsWithoutImprovement}");
                     this.focus.PerformOperation(candidate);
                 }
             }
@@ -287,6 +297,7 @@ namespace BranchDecomposition.ImprovementHeuristics
 
         protected override LocalSearchOperation GetCandidate()
         {
+            this.ExploredSolutions++;
             return this.getOperator().GetRandomOperation(this.focus.CurrentSolution, this.randomNumberGenerator);
         }
 

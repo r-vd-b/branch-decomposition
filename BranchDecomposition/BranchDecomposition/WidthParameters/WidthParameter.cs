@@ -17,7 +17,7 @@ namespace BranchDecomposition.WidthParameters
         {
             this.Cache = new WidthCache();
         }
-        
+
         /// <summary>
         /// Get the f-width of a cut.
         /// </summary>
@@ -57,21 +57,26 @@ namespace BranchDecomposition.WidthParameters
         /// </summary>
         protected class WidthCache
         {
-            private Dictionary<Graph, Dictionary<BitSet, Entry>> cache = new Dictionary<Graph, Dictionary<BitSet, Entry>>();
+            private Dictionary<Graph, Dictionary<BitSet, Entry>> graphcache = new Dictionary<Graph, Dictionary<BitSet, Entry>>();
             private LinkedList<Entry> history = new LinkedList<Entry>();
+            
+            public int Hits { get; private set; }
+            public int Requests { get; private set; }
+            public double HitRatio { get { return this.Requests == 0 ? 0 : this.Hits / (double)this.Requests; } }
+            public double AverageEntryAccesCount { get { return this.history.Average(entry => entry.AccessCount); } }
             
             /// <summary>
             /// The maximum size of the cache.
             /// </summary>
-            public int MaxSize { get; }
+            public int MaximumSize { get; }
             /// <summary>
             /// The current size of the cache.
             /// </summary>
-            public int Size { get { return this.cache.Count; } }
+            public int Size { get { return this.graphcache.Count; } }
 
             public WidthCache(int maxcachesize = 1000000)
             {
-                this.MaxSize = maxcachesize;
+                this.MaximumSize = maxcachesize;
             }
 
             /// <summary>
@@ -84,8 +89,9 @@ namespace BranchDecomposition.WidthParameters
             /// <returns>Whether the retrieval was successful.</returns>
             public bool TryGetValue(Graph graph, BitSet key, out double value)
             {
+                this.Requests++;
                 Dictionary<BitSet, Entry> graphcache = null;
-                bool success = this.cache.TryGetValue(graph, out graphcache);
+                bool success = this.graphcache.TryGetValue(graph, out graphcache);
                 Entry entry = default(Entry);
                 if (success)
                     success = graphcache.TryGetValue(key, out entry);
@@ -95,6 +101,8 @@ namespace BranchDecomposition.WidthParameters
                     value = entry.Value;
                     this.history.Remove(entry.Node);
                     this.history.AddLast(entry.Node);
+                    entry.AccessCount++;
+                    this.Hits++;
                 }
                 else
                     value = -1;
@@ -111,22 +119,29 @@ namespace BranchDecomposition.WidthParameters
             public void Add(Graph graph, BitSet key, double value)
             {
                 Dictionary<BitSet, Entry> graphcache = null;
-                if (!this.cache.TryGetValue(graph, out graphcache))
-                    graphcache = this.cache[graph] = new Dictionary<BitSet, Entry>();
+                if (!this.graphcache.TryGetValue(graph, out graphcache))
+                    graphcache = this.graphcache[graph] = new Dictionary<BitSet, Entry>();
 
                 Entry entry = graphcache[key] = new Entry(graph, key, value);
                 entry.Node = this.history.AddLast(entry);
-                if (this.history.Count > this.MaxSize)
+                if (this.history.Count > this.MaximumSize)
                 {
-                    this.cache[history.First.Value.Graph].Remove(history.First.Value.Key);
+                    this.graphcache[history.First.Value.Graph].Remove(history.First.Value.Key);
                     this.history.RemoveFirst();
                 }
             }
+
+            public override string ToString()
+            {
+                return $"Size = {this.history.Count}, maximum size = {this.MaximumSize}, received requests = {this.Requests}, hit ratio = {this.HitRatio.ToString("N2")}";
+            }
+
             private class Entry
             {
                 public Graph Graph { get; }
                 public BitSet Key { get; }
                 public double Value { get; }
+                public int AccessCount { get; set; }
                 public LinkedListNode<Entry> Node { get; set; }
 
                 public Entry(Graph graph, BitSet key, double value)
@@ -138,7 +153,7 @@ namespace BranchDecomposition.WidthParameters
 
                 public override string ToString()
                 {
-                    return this.Value.ToString();
+                    return $"({this.Key}, {this.Value}) has been accessed {this.AccessCount} times";
                 }
             }
         }
