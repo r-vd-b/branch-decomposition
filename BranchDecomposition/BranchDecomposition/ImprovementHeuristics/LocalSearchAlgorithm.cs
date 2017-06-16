@@ -13,6 +13,8 @@ namespace BranchDecomposition.ImprovementHeuristics
     /// </summary>
     abstract class LocalSearchAlgorithm
     {
+        public const double PRECISION = 0.0001;
+
         public int MaximumComputationTime { get; protected set; }
         public double CurrentComputationTime { get { return this.stopwatch.ElapsedMilliseconds / 1000.0; } }
         public int Iterations { get; protected set; }
@@ -115,7 +117,7 @@ namespace BranchDecomposition.ImprovementHeuristics
                 foreach (var operation in op.Operations(this.focus.CurrentSolution, this.randomNumberGenerator))
                 {
                     this.ExploredSolutions++;
-                    if (operation.Cost < this.cost)
+                    if (operation.Cost - this.cost < -PRECISION)
                         return operation;
                 }
             return null;
@@ -137,7 +139,7 @@ namespace BranchDecomposition.ImprovementHeuristics
                 foreach (var operation in op.Operations(this.focus.CurrentSolution, this.randomNumberGenerator))
                 {
                     this.ExploredSolutions++;
-                    if (operation.Cost < cost)
+                    if (operation.Cost - cost < -PRECISION)
                     {
                         candidate = operation;
                         cost = candidate.Cost;
@@ -155,7 +157,6 @@ namespace BranchDecomposition.ImprovementHeuristics
         public int MinimumPerturbationSize { get; } = 2;
         public int MaximumPerturbationSize { get; } = 8;
         public int Failures { get; protected set; } = 0;
-        public int MaximumFailures { get; } = 20;
         public int CurrentPerturbationSize { get { return Math.Min(this.MaximumPerturbationSize, this.MinimumPerturbationSize + this.Failures); } }
 
         public VariableNeighborhoodSearch(IEnumerable<DecompositionTree> initial, LocalSearchOperator[] operators, Random rng) : base(initial, operators, rng) { }            
@@ -188,8 +189,6 @@ namespace BranchDecomposition.ImprovementHeuristics
 
                 Console.WriteLine($"Result of perturbation: {this.focus.CurrentSolution.Width.ToString("N2")} {this.focus.CurrentSolution.Cost.ToString("N0")}");
                 this.Failures++;
-                if (this.Failures > this.MaximumFailures)
-                    return false;
             }
             else
             {
