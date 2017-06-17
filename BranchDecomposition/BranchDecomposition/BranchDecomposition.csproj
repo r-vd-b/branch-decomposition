@@ -54,6 +54,7 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="Graph.cs" />
     <Compile Include="ImprovementHeuristics\IdentityOperation.cs" />
+    <Compile Include="ImprovementHeuristics\SwapOperation.cs" />
     <Compile Include="ImprovementHeuristics\MoveOperation.cs" />
     <Compile Include="ImprovementHeuristics\MoveOperator.cs" />
     <Compile Include="ImprovementHeuristics\LocalSearchAlgorithm.cs" />
