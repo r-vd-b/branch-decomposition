@@ -8,6 +8,9 @@ using BranchDecomposition.WidthParameters;
 
 namespace BranchDecomposition.ConstructionHeuristics
 {
+    /// <summary>
+    /// A construction strategy that creates a decomposition tree by creating the leaves and repeatedly selecting a random pair of orphan nodes and linking them with a parent node.
+    /// </summary>
     class RandomBottomUpConstructor : ConstructionHeuristic
     {
         protected Random rng;

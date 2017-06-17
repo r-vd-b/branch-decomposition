@@ -9,7 +9,7 @@ using BranchDecomposition.WidthParameters;
 namespace BranchDecomposition.ConstructionHeuristics
 {
     /// <summary>
-    /// A class to construct a linear decomposition tree from a graph.
+    /// A class to construct a linear decomposition tree by starting with a random leaf and repeatedly extending the current root with a leaf that is not yet in the tree, such that the width of the new root is minimal over all leaves not in the tree.
     /// </summary>
     class GreedyLinearConstructor : ConstructionHeuristic
     {

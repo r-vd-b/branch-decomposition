@@ -8,6 +8,9 @@ using BranchDecomposition.WidthParameters;
 
 namespace BranchDecomposition.ConstructionHeuristics
 {
+    /// <summary>
+    /// A construction strategy that creates a decomposition tree from the root node by repeatedly selecting a childless internal node to extend and partitioning its set randomly into two non-empty sets.
+    /// </summary>
     class RandomTopDownConstructor : ConstructionHeuristic
     {
         protected Random rng;
@@ -30,14 +33,18 @@ namespace BranchDecomposition.ConstructionHeuristics
 
             while (candidates.Count > 0)
             {
+                // Select a random childless internal node.
                 DecompositionNode parent = candidates[this.rng.Next(candidates.Count)];
                 candidates.Remove(parent);
 
+                // Shuffle its set of vertices.
                 int[] indices = parent.Set.ToArray();
                 indices.Shuffle(this.rng);
 
+                // Split the set randomly into two non-empty sets.
                 int split = 1 + this.rng.Next(indices.Length - 2);
 
+                // Create its children.
                 DecompositionNode left = null;
                 if (split == 1)
                     left = new DecompositionNode(graph.Vertices[indices[0]], index, tree);

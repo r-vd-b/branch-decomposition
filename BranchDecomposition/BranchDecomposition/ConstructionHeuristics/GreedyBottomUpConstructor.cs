@@ -8,6 +8,9 @@ using BranchDecomposition.WidthParameters;
 
 namespace BranchDecomposition.ConstructionHeuristics
 {
+    /// <summary>
+    /// A class to construct a decomposition tree iteratively by creating a parent node for two orphans that minimizes the width over all possible pairs of orphans in the current iteration.
+    /// </summary>
     class GreedyBottomUpConstructor : ConstructionHeuristic
     {
         public override DecompositionTree Construct(Graph graph, WidthParameter widthparameter)

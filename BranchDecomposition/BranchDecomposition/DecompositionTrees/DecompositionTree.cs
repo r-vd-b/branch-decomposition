@@ -15,7 +15,7 @@ namespace BranchDecomposition.DecompositionTrees
         public int Size { get { return this.Graph.Vertices.Count; } }
 
         public double Width { get { return this.Root.SubTreeWidth; } }
-        public double Cost { get { return this.Root.SubTreeWidth * this.Size * this.Size + this.Root.SubTreeSum - (this.Root?.Right?.Width ?? 0); } }
+        public double Cost { get { return ComputeCost(this.Root.SubTreeWidth, this.Size, this.Root.SubTreeSum, this.Root?.Right?.Width ?? 0); } }
         
         public DecompositionTree(Graph graph, WidthParameter parameter)
         {
@@ -44,6 +44,9 @@ namespace BranchDecomposition.DecompositionTrees
             this.Nodes[index] = node;
         }
 
+        /// <summary>
+        /// Attach the child to the parent in the specific branch. Set the child as the root of the tree if no parent is provided.
+        /// </summary>
         public void Attach(DecompositionNode parent, DecompositionNode child, Branch branch)
         {
             child.Parent = parent;
@@ -59,6 +62,14 @@ namespace BranchDecomposition.DecompositionTrees
             return $"|V|={this.Nodes.Length}, Width={this.Width}, Cost={this.Cost}";
         }
 
+        /// <summary>
+        /// Compute the cost of a tree based on the provided width properties.
+        /// </summary>
+        /// <param name="maximumWidth">The width of the tree.</param>
+        /// <param name="numberOfVertices">The number of vertices in the corresponding graph.</param>
+        /// <param name="sumOfWidths">The sum of the width over all nodes in the tree.</param>
+        /// <param name="topWidth">The width of one of the children of the root.</param>
+        /// <returns>The cost of the tree.</returns>
         public static double ComputeCost(double maximumWidth, int numberOfVertices, double sumOfWidths, double topWidth)
         {
             return maximumWidth * numberOfVertices * numberOfVertices + sumOfWidths - topWidth;

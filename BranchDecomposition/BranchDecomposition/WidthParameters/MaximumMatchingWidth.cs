@@ -6,9 +6,12 @@ using System.Threading.Tasks;
 
 namespace BranchDecomposition.WidthParameters
 {
+    /// <summary>
+    /// The maximum-matching-width is the size of a maximum matching over the cut.
+    /// </summary>
     class MaximumMatchingWidth : WidthParameter
     {
-        public MaximumMatchingWidth() : base() { this.Name = "Maximum-Matching-width"; }
+        public MaximumMatchingWidth() : base() { this.Name = "maximum-matching-width"; }
 
         protected override double computeWidth(Graph graph, BitSet left, BitSet right)
         {

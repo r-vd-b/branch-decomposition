@@ -94,7 +94,10 @@ namespace BranchDecomposition.DecompositionTrees
                 node.UpdateWidthProperties();
         }
 
-        // Updates the width properties of this node.
+        /// <summary>
+        /// Update the width properties of this node.
+        /// </summary>
+        /// <param name="recomputeOwnWidth">Should the width of the node itself be recomputed as well?</param>
         public void UpdateWidthProperties(bool recomputeOwnWidth = true)
         {
             if (recomputeOwnWidth)

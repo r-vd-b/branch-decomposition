@@ -11,7 +11,7 @@ namespace BranchDecomposition.WidthParameters
     /// </summary>
     class BooleanWidth : WidthParameter
     {
-        public BooleanWidth() : base() { this.Name = "Boolean-width"; }
+        public BooleanWidth() : base() { this.Name = "boolean-width"; }
 
         protected override double computeWidth(Graph graph, BitSet left, BitSet right)
         {
