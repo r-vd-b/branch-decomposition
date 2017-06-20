@@ -22,6 +22,7 @@ namespace BranchDecomposition.DecompositionTrees
         public BitSet Set { get; set; }
 
         public int Index { get; set; }
+        public int SubTreeSize { get { return 2 * this.Set.Count - 1; } }
 
         public double Width { get; set; }
         public double SubTreeWidth { get; set; }
@@ -61,7 +62,7 @@ namespace BranchDecomposition.DecompositionTrees
             this.vertex = vertex;
         }
 
-        public DecompositionNode(DecompositionNode node)
+        public DecompositionNode(DecompositionNode node, DecompositionTree tree = null)
         {
             this.Set = new BitSet(node.Set);
             this.Left = node.Left;
@@ -73,6 +74,7 @@ namespace BranchDecomposition.DecompositionTrees
             this.SubTreeSum = node.SubTreeSum;
             this.Index = node.Index;
             this.vertex = node.vertex;
+            this.Tree = tree != null ? tree : node.Tree;
         }
 
         /// <summary>
@@ -120,9 +122,9 @@ namespace BranchDecomposition.DecompositionTrees
         /// <returns>A deep copy of the node.</returns>
         public DecompositionNode CopyTree(DecompositionTree tree, DecompositionNode parent)
         {
-            DecompositionNode node = tree.Nodes[this.Index] = new DecompositionNode(this);
+            DecompositionNode node = tree.Nodes[this.Index] = new DecompositionNode(this, tree);
             node.Parent = parent;
-            if (this.IsLeaf)
+            if (!this.IsLeaf)
             {
                 node.Left = this.Left.CopyTree(tree, node);
                 node.Right = this.Right.CopyTree(tree, node);

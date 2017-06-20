@@ -48,7 +48,7 @@ namespace BranchDecomposition.ImprovementHeuristics
         {
             if (size == 1)
             {
-                DecompositionNode node = new DecompositionNode(leaves[index]);
+                DecompositionNode node = new DecompositionNode(leaves[index], tree);
                 node.Index = index;
                 tree.Nodes[index] = node;
                 return node;
