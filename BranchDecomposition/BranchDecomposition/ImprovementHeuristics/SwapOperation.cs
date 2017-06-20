@@ -44,25 +44,20 @@ namespace BranchDecomposition.ImprovementHeuristics
             //swap position of the subtrees
             this.Tree.Attach(oldParentA, b, oldBranchA);
             this.Tree.Attach(oldParentB, a, oldBranchB);
-            
-            //update only those widths that have changed; does this bottom-up to facilitate passing maximums and sums upwards.
-//Are the sets set up correctly at the moment of running this? if not, this does not work as is (either work with subtrees, fix sets as this runs or use the un-updated data)
-  //How does move operation update widths? If that is similar (or better) maybe emulate that here instead.
-//Is the width stored in a node the width of the edge between it and its parent?
-            BitSet collection = new BitSet(a.Parent.Set);
-            DecompositionNode currentNode = a.Parent;
 
+            //update only those widths that have changed; does this bottom-up to facilitate passing maximums and sums upwards.
+//Is the width stored in a node the width of the edge between it and its parent?
+            DecompositionNode commonAncestor = findCommonAncestor(a, b);
+
+            DecompositionNode currentNode = a.Parent;
             do //go up from node A until we find common ancestor, update along the way
             {
                 currentNode.UpdateWidthProperties();
-                collection.Or(currentNode.Sibling.Set);
                 currentNode = currentNode.Parent;
-            } while (!collection.IsSupersetOf(b.Set)) ;
+            } while (currentNode != commonAncestor);
 
-            DecompositionNode commonAncestor = currentNode;
             currentNode = b.Parent;
-
-            do //go up from node B until we are at common ancestor, update along the way
+            do
             {
                 currentNode.UpdateWidthProperties();
                 currentNode = currentNode.Parent;
@@ -73,6 +68,14 @@ namespace BranchDecomposition.ImprovementHeuristics
 
             //all edges with possibly different score have been recalculated, so pass the maximums and sums up to the root
             this.updateAncestors(commonAncestor, null, null, null);
+        }
+
+        private DecompositionNode findCommonAncestor(DecompositionNode n1, DecompositionNode n2)
+        {
+            for (DecompositionNode ancestor = n1; ancestor != null; ancestor = ancestor.Parent)
+                if (ancestor.Set.IsSupersetOf(n2.Set))
+                    return ancestor;
+            return null;
         }
 
         private void updateAncestors(DecompositionNode child, DecompositionNode end, BitSet add, BitSet remove)
