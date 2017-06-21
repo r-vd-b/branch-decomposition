@@ -15,6 +15,9 @@ namespace BranchDecomposition.WidthParameters
 
         public string Name { get; protected set; }
 
+        public int CacheRequests { get { return this.Cache.Requests; } }
+        public double CacheHitRatio { get { return this.Cache.HitRatio; } }
+
         public WidthParameter()
         {
             this.Cache = new WidthCache();
