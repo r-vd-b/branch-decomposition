@@ -22,7 +22,7 @@ namespace BranchDecomposition.ImprovementHeuristics
             foreach (var node in tree.Root.SubTree(TreeTraversal.ParentFirst))
             {
                 insertioncandidates[candidateindex] = node;
-                total += candidatecounters[candidateindex] = tree.Nodes.Length - (2 * node.Set.Count - 1) - 2;
+                total += candidatecounters[candidateindex] = tree.Nodes.Length - node.SubTreeSize - 2;
                 candidateindex++;
             }
 
@@ -84,25 +84,52 @@ namespace BranchDecomposition.ImprovementHeuristics
 
         public override LocalSearchOperation GetRandomOperation(DecompositionTree tree, Random rng)
         {
-            // Select a random node x (such that x is not the root) that will be inserted at a different position in the tree.
-            DecompositionNode selected = tree.Nodes[rng.Next(tree.Nodes.Length)];
-            int index = tree.Nodes.Length - 1;
-            while (selected.IsRoot || selected.Parent.IsRoot && selected.Sibling.IsLeaf)
-            {
-                tree.MoveTo(selected, index);
-                selected = tree.Nodes[rng.Next(index--)];
-            }
-            tree.MoveTo(selected, tree.Nodes.Length - 1);
+            // No operations available.
+            if (tree.Nodes.Length <= 3)
+                return null;
 
-            // Select a random node y that will become the new sibling of x, such that y is not in the subtree of x and not parent(x).
-            DecompositionNode sibling = null;
-            for (int i = tree.Nodes.Length - 1; i > 0; i--)
+            // Select a random node that will be moved to a different position in the tree.
+            int index = -1;
+            // We select neither the root, nor a child of the root if its sibling is a leaf.
+            if (tree.Root.Left.IsLeaf)
+                index = 1 + rng.Next(tree.Nodes.Length - 2);
+            else if (tree.Root.Right.IsLeaf)
             {
-                sibling = tree.Nodes[rng.Next(i)];
-                tree.MoveTo(sibling, i - 1);
-                if (sibling != selected.Parent && sibling != selected.Sibling && !sibling.Set.IsSubsetOf(selected.Set))
-                    break;
+                index = 1 + rng.Next(tree.Nodes.Length - 2);
+                if (index == tree.Root.SubTreeSize - 2)
+                    index++;
             }
+            else
+                index = 1 + rng.Next(tree.Nodes.Length - 1);
+            DecompositionNode selected = tree.Find(index);
+
+            // Select a random node that will become the new sibling of the selected node.
+            int candidateCount = tree.Nodes.Length - selected.SubTreeSize - 2,
+                positionIndex = 1 + rng.Next(candidateCount);
+
+            // We need to ensure that we do not select a node in the subtree of the selected node, nor its current parent and sibling.
+            if (selected.Branch == Branch.Left)
+            {
+                // Shift it outside the range of the subtree of the selected node.
+                if (index - selected.SubTreeSize < positionIndex && positionIndex <= index)
+                    positionIndex += selected.SubTreeSize;
+                // Shift it past the sibling and the parent of the selected node.
+                if (positionIndex == index + selected.Sibling.SubTreeSize)
+                    positionIndex += 2;
+                // Shift it past the parent of the selected node.
+                else if (positionIndex == index + selected.Sibling.SubTreeSize + 1)
+                    positionIndex++;
+            }
+            else
+            {
+                // Shift it past the sibling of the selected node.
+                if (positionIndex == index - selected.SubTreeSize)
+                    positionIndex++;
+                // Shift it past the parent and outside the range of the subtree of the selected node.
+                if (index - selected.SubTreeSize < positionIndex && positionIndex <= index + 1)
+                    positionIndex += selected.SubTreeSize + 1;
+            }
+            DecompositionNode sibling = tree.Find(positionIndex);
 
             return new MoveOperation(tree, selected, sibling);
         }

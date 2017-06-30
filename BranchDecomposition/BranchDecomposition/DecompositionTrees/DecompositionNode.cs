@@ -24,6 +24,9 @@ namespace BranchDecomposition.DecompositionTrees
         public int Index { get; set; }
         public int SubTreeSize { get { return 2 * this.Set.Count - 1; } }
 
+        /// <summary>
+        /// The width of a node is the width of the cut (node.Set, complement of node.Set), i.e. the width of the cut induced by the edge to the parent of the node.
+        /// </summary>
         public double Width { get; set; }
         public double SubTreeWidth { get; set; }
         public double SubTreeSum { get; set; }

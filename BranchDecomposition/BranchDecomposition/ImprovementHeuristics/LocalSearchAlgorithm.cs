@@ -57,7 +57,6 @@ namespace BranchDecomposition.ImprovementHeuristics
                     break;
             }
             this.stopTimer();
-            Console.WriteLine($"Computation time = {this.CurrentComputationTime.ToString("N1")}");
             return this.solutions.Select(sol => sol.Revert()).ToArray();
         }
 
@@ -176,7 +175,7 @@ namespace BranchDecomposition.ImprovementHeuristics
             {
                 // Revert to the best solution so far.
                 // Note: reverting is not necessary, it might be better to remove it.
-                Console.WriteLine($"Perturbation of size {this.CurrentPerturbationSize} after {this.Failures + 1} failures; best = {this.focus.BestCost.ToString("N2")}");
+                Console.WriteLine($"Perturbation of size {this.CurrentPerturbationSize} after {this.Failures + 1} failures; best = {this.focus.BestCost.ToString("F2")}");
                 if (this.focus.CurrentSolution.Cost > this.focus.BestCost)
                     this.focus.Revert();
 
@@ -187,7 +186,7 @@ namespace BranchDecomposition.ImprovementHeuristics
                     this.focus.PerformOperation(operation);
                 }
 
-                Console.WriteLine($"Result of perturbation: {this.focus.CurrentSolution.Width.ToString("N2")} {this.focus.CurrentSolution.Cost.ToString("N0")}");
+                Console.WriteLine($"Result of perturbation: {this.focus.CurrentSolution.Width.ToString("F2")} {this.focus.CurrentSolution.Cost.ToString("F0")}");
                 this.Failures++;
             }
             else
@@ -195,7 +194,7 @@ namespace BranchDecomposition.ImprovementHeuristics
                 if (this.focus.PerformOperation(candidate))
                     this.Failures = 0;
                 this.UpdateFocus();
-                Console.WriteLine($"{this.focus.CurrentSolution.Width.ToString("N2")} {this.focus.CurrentSolution.Cost.ToString("N0")}");
+                Console.WriteLine($"{this.focus.CurrentSolution.Width.ToString("F2")} {this.focus.CurrentSolution.Cost.ToString("F0")}");
             }
 
             return true;

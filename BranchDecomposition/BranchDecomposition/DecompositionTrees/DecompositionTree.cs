@@ -24,7 +24,7 @@ namespace BranchDecomposition.DecompositionTrees
             this.Nodes = new DecompositionNode[graph.Vertices.Count * 2 - 1];
         }
 
-        public DecompositionTree(DecompositionTree tree) : this(tree.Graph, tree.WidthParameter)
+        public DecompositionTree(DecompositionTree tree, WidthParameter width = null) : this(tree.Graph, width != null ? width : tree.WidthParameter)
         {
             this.Root = tree.Root.CopyTree(this, null);
         }
@@ -34,16 +34,7 @@ namespace BranchDecomposition.DecompositionTrees
             this.Root.UpdateWidthSubtree();
             return this.Width;
         }
-
-        public void MoveTo(DecompositionNode node, int index)
-        {
-            DecompositionNode other = this.Nodes[index];
-            other.Index = node.Index;
-            this.Nodes[node.Index] = other;
-            node.Index = index;
-            this.Nodes[index] = node;
-        }
-
+        
         /// <summary>
         /// Attach the child to the parent in the specific branch. Set the child as the root of the tree if no parent is provided.
         /// </summary>
@@ -55,6 +46,26 @@ namespace BranchDecomposition.DecompositionTrees
                 this.Root = child;
             else
                 parent.SetChild(branch, child);
+        }
+
+        /// <summary>
+        /// Returns the node at the given position. The position index of a parent is one plus the index of the right child; the position of the left child is less than the position of the right child.
+        /// </summary>
+        public DecompositionNode Find(int position)
+        {
+            int offset = 0;
+            DecompositionNode result = this.Root;
+            while (offset + result.SubTreeSize != position)
+            {
+                if (position <= offset + result.Left.SubTreeSize)
+                    result = result.Left;
+                else
+                {
+                    offset += result.Left.SubTreeSize;
+                    result = result.Right;
+                }
+            }
+            return result;
         }
         
         public override string ToString()
