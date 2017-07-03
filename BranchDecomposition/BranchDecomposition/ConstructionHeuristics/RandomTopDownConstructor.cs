@@ -24,7 +24,7 @@ namespace BranchDecomposition.ConstructionHeuristics
         {
             int index = 0;
             DecompositionTree tree = new DecompositionTree(graph, widthparameter);
-            DecompositionNode root = new DecompositionNode(~(new BitSet(tree.Size)), index, tree);
+            DecompositionNode root = new DecompositionNode(~(new BitSet(tree.VertexCount)), index, tree);
             tree.Nodes[index++] = root;
             tree.Attach(null, root, Branch.Left);
 
@@ -50,7 +50,7 @@ namespace BranchDecomposition.ConstructionHeuristics
                     left = new DecompositionNode(graph.Vertices[indices[0]], index, tree);
                 else
                 {
-                    BitSet leftset = new BitSet(tree.Size);
+                    BitSet leftset = new BitSet(tree.VertexCount);
                     for (int i = 0; i < split; i++)
                         leftset[indices[i]] = true;
                     left = new DecompositionNode(leftset, index, tree);
@@ -64,7 +64,7 @@ namespace BranchDecomposition.ConstructionHeuristics
                     right = new DecompositionNode(graph.Vertices[indices[indices.Length - 1]], index, tree);
                 else
                 {
-                    BitSet rightset = new BitSet(tree.Size);
+                    BitSet rightset = new BitSet(tree.VertexCount);
                     for (int i = split; i < indices.Length; i++)
                         rightset[indices[i]] = true;
                     right = new DecompositionNode(rightset, index, tree);

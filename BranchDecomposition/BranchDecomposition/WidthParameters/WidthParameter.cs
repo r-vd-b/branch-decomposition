@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BranchDecomposition.ReductionRules;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,16 +12,20 @@ namespace BranchDecomposition.WidthParameters
     /// </summary>
     abstract class WidthParameter
     {
-        protected WidthCache Cache;
+        // The cache of previously computed widths.
+        protected WidthCache cache;
+        // The reduction rules that are safe for the width parameter.
+        protected ReductionRule[] reductionRules;
 
         public string Name { get; protected set; }
 
-        public int CacheRequests { get { return this.Cache.Requests; } }
-        public double CacheHitRatio { get { return this.Cache.HitRatio; } }
+        public int CacheRequests { get { return this.cache.Requests; } }
+        public double CacheHitRatio { get { return this.cache.HitRatio; } }
 
-        public WidthParameter()
+        public WidthParameter(ReductionRule[] rules)
         {
-            this.Cache = new WidthCache();
+            this.cache = new WidthCache();
+            this.reductionRules = rules;
         }
 
         /// <summary>
@@ -34,7 +39,7 @@ namespace BranchDecomposition.WidthParameters
         {
             double width = -1;
             // First, check if the cache already contains the cut.
-            if (!this.Cache.TryGetValue(graph, left, out width))
+            if (!this.cache.TryGetValue(graph, left, out width))
             {
                 // If the right side of the 2-partition is not provide, construct it.
                 if (right == null)
@@ -42,10 +47,38 @@ namespace BranchDecomposition.WidthParameters
                 // Compute the f-width.
                 width = computeWidth(graph, left, right);
                 // Store it for both partitions.
-                this.Cache.Add(graph, new BitSet(left), width);
-                this.Cache.Add(graph, new BitSet(right), width);
+                this.cache.Add(graph, new BitSet(left), width);
+                this.cache.Add(graph, new BitSet(right), width);
             }
             return width;
+        }
+
+        public virtual Graph[] ApplyReductionRules(Graph graph)
+        {
+            List<Graph> graphs = new List<Graph>();
+            graphs.Add(graph);
+
+            int index = 0;
+            while (index < graphs.Count)
+            {
+                Graph g = graphs[index];
+                bool applied = false;
+                foreach (ReductionRule r in this.reductionRules)
+                    if (applied = r.IsApplicable(g))
+                    {
+                        Graph[] result = r.Apply(g);
+                        graphs.Remove(graph);
+                        graphs.AddRange(result);
+                        break;
+                    }
+                if (!applied)
+                    index++;
+            }
+
+            foreach (Graph g in graphs)
+                g.UpdateIndices();
+
+            return graphs.ToArray();
         }
 
         /// <summary>

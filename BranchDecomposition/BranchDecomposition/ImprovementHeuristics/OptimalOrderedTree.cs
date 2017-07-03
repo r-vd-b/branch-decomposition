@@ -13,19 +13,19 @@ namespace BranchDecomposition.ImprovementHeuristics
         public DecompositionTree Construct(DecompositionTree tree)
         {
             DecompositionNode[] leaves = tree.Root.SubTree(TreeTraversal.ParentFirst).Where(node => node.IsLeaf).ToArray();
-            double[,] width = new double[tree.Size, tree.Size + 1];
-            BitSet[,] sets = new BitSet[tree.Size, tree.Size + 1];
-            for (int index = 0; index < tree.Size; index++)
+            double[,] width = new double[tree.VertexCount, tree.VertexCount + 1];
+            BitSet[,] sets = new BitSet[tree.VertexCount, tree.VertexCount + 1];
+            for (int index = 0; index < tree.VertexCount; index++)
             {
                 sets[index, 1] = leaves[index].Set;
                 width[index, 1] = leaves[index].Width;
-                for (int length = 2; length <= tree.Size - index; length++)
+                for (int length = 2; length <= tree.VertexCount - index; length++)
                     sets[index, length] = sets[index, length - 1] | leaves[index + length - 1].Set;
             }
 
-            for (int length = 2; length <= tree.Size; length++)
+            for (int length = 2; length <= tree.VertexCount; length++)
             {
-                for (int index = 0; index <= tree.Size - length; index++)
+                for (int index = 0; index <= tree.VertexCount - length; index++)
                 {
                     double childWidth = double.PositiveInfinity;
                     for (int k = index + 1; k < index + length; k++)
@@ -40,7 +40,7 @@ namespace BranchDecomposition.ImprovementHeuristics
 
             DecompositionTree result = new DecompositionTree(tree.Graph, tree.WidthParameter);
             int treeindex = tree.Nodes.Length - 1;
-            this.backtrack(result, leaves, width, sets, 0, tree.Size, ref treeindex);
+            this.backtrack(result, leaves, width, sets, 0, tree.VertexCount, ref treeindex);
             return result;
         }
 

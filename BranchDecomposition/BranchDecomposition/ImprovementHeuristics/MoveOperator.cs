@@ -60,10 +60,17 @@ namespace BranchDecomposition.ImprovementHeuristics
                             // Initialize the set of all candidate positions.
                             positions = positioncandidates[candidateindex] = new DecompositionNode[candidatecounters[candidateindex]];
                             int index = 0;
-                            foreach (var node in insertioncandidate.Parent.TreeExcludingSubTree)
-                                positions[index++] = node;
                             foreach (var node in insertioncandidate.Sibling.SubTree(TreeTraversal.ParentFirst).Skip(1))
                                 positions[index++] = node;
+                            for (DecompositionNode ancestor = insertioncandidate.Parent; !ancestor.IsRoot; ancestor = ancestor.Parent)
+                            {
+                                foreach (DecompositionNode node in ancestor.Sibling.SubTree(TreeTraversal.ParentFirst))
+                                    positions[index++] = node;
+                                if (ancestor != insertioncandidate.Parent)
+                                    positions[index++] = ancestor;
+                            }
+                            if (!insertioncandidate.Parent.IsRoot)
+                                positions[index++] = tree.Root;
                         }
 
                         // Select a random position.
@@ -89,18 +96,7 @@ namespace BranchDecomposition.ImprovementHeuristics
                 return null;
 
             // Select a random node that will be moved to a different position in the tree.
-            int index = -1;
-            // We select neither the root, nor a child of the root if its sibling is a leaf.
-            if (tree.Root.Left.IsLeaf)
-                index = 1 + rng.Next(tree.Nodes.Length - 2);
-            else if (tree.Root.Right.IsLeaf)
-            {
-                index = 1 + rng.Next(tree.Nodes.Length - 2);
-                if (index == tree.Root.SubTreeSize - 2)
-                    index++;
-            }
-            else
-                index = 1 + rng.Next(tree.Nodes.Length - 1);
+            int index = this.getRandomNonRootIndex(tree, rng);
             DecompositionNode selected = tree.Find(index);
 
             // Select a random node that will become the new sibling of the selected node.

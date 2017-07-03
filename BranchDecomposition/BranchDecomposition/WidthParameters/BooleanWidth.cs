@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BranchDecomposition.ReductionRules;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,7 @@ namespace BranchDecomposition.WidthParameters
     /// </summary>
     class BooleanWidth : WidthParameter
     {
-        public BooleanWidth() : base() { this.Name = "boolean-width"; }
+        public BooleanWidth() : base(new ReductionRule[] { new RemoveDegreeZeroRule(), new RemoveDegreeOneRule(), new RemoveTwinRule() }) { this.Name = "boolean-width"; }
 
         protected override double computeWidth(Graph graph, BitSet left, BitSet right)
         {
@@ -25,7 +26,7 @@ namespace BranchDecomposition.WidthParameters
                 // The neighborhood of v in the right set.
                 BitSet neighborhood = v.Neighborhood & right;
 
-                if (neighborhood.IsEmpty)
+                if (neighborhood.IsEmpty || neighborhoods.Contains(neighborhood))
                     continue;
 
                 // Add the union of the neighborhood of v with every element in the neighborhood set.

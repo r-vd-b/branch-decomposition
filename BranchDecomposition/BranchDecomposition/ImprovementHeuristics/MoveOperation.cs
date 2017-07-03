@@ -68,9 +68,9 @@ namespace BranchDecomposition.ImprovementHeuristics
                 }
 
                 // ancestors of parent
-                this.costAncestors(this.SelectedNode.Parent, common, null, this.SelectedNode.Set, ref maximum, ref sum);
+                this.computeWidthAncestors(this.SelectedNode.Parent, common, null, this.SelectedNode.Set, ref maximum, ref sum);
                 // ancestors of the new sibling
-                this.costAncestors(this.SelectedSibling, common, this.SelectedNode.Set, null, ref maximum, ref sum);
+                this.computeWidthAncestors(this.SelectedSibling, common, this.SelectedNode.Set, null, ref maximum, ref sum);
             }
             else if (this.SelectedNode.Set.IsSubsetOf(this.SelectedSibling.Set))
             {
@@ -91,7 +91,7 @@ namespace BranchDecomposition.ImprovementHeuristics
                     topwidth = this.SelectedNode.Width;
 
                 // ancestors of parent
-                this.costAncestors(this.SelectedNode.Parent, this.SelectedSibling.Parent, null, this.SelectedNode.Set, ref maximum, ref sum);
+                this.computeWidthAncestors(this.SelectedNode.Parent, this.SelectedSibling.Parent, null, this.SelectedNode.Set, ref maximum, ref sum);
             }
             else // the new sibling is a descendant of the original sibling
             {
@@ -113,40 +113,13 @@ namespace BranchDecomposition.ImprovementHeuristics
                     topwidth = this.OriginalSibling.Right.Set.IsSupersetOf(this.SelectedSibling.Set) ? this.OriginalSibling.Left.Width : this.OriginalSibling.Right.Width;
 
                 // ancestors of the new sibling
-                this.costAncestors(this.SelectedSibling, this.SelectedNode.Parent, this.SelectedNode.Set, null, ref maximum, ref sum);
+                this.computeWidthAncestors(this.SelectedSibling, this.SelectedNode.Parent, this.SelectedNode.Set, null, ref maximum, ref sum);
             }
 
             // common ancestors
-            this.costAncestors(common, null, null, null, ref maximum, ref sum);
+            this.computeWidthAncestors(common, null, null, null, ref maximum, ref sum);
 
-            return DecompositionTree.ComputeCost(maximum, this.Tree.Size, sum, topwidth);
-        }
-
-        private void costAncestors(DecompositionNode child, DecompositionNode end, BitSet add, BitSet remove, ref double maximum, ref double sum)
-        {
-            for (DecompositionNode ancestor = child?.Parent; ancestor != end && ancestor != null; child = ancestor, ancestor = ancestor.Parent)
-            {
-                double width = ancestor.Width;
-                if (add != null || remove != null)
-                {
-                    BitSet set = ancestor.Set;
-                    if (add != null)
-                        set |= add;
-                    if (remove != null)
-                        set -= remove;
-                    width = this.Tree.WidthParameter.GetWidth(this.Tree.Graph, set);
-                }
-                maximum = Math.Max(maximum, Math.Max(width, child.Sibling.SubTreeWidth));
-                sum += width + child.Sibling.SubTreeSum;
-            }
-        }
-
-        private DecompositionNode findCommonAncestor(DecompositionNode n1, DecompositionNode n2)
-        {
-            for (DecompositionNode ancestor = n1; ancestor != null; ancestor = ancestor.Parent)
-                if (ancestor.Set.IsSupersetOf(n2.Set))
-                    return ancestor;
-            return null;
+            return DecompositionTree.ComputeCost(maximum, this.Tree.VertexCount, sum, topwidth);
         }
 
         private void updateTree(DecompositionNode oldsibling, DecompositionNode newsibling)
@@ -206,26 +179,6 @@ namespace BranchDecomposition.ImprovementHeuristics
             }
 
             this.updateAncestors(common, null, null, null);
-        }
-
-        private void updateAncestors(DecompositionNode child, DecompositionNode end, BitSet add, BitSet remove)
-        {
-            if (child == null)
-                return;
-
-            for (DecompositionNode ancestor = child.Parent; ancestor != end && ancestor != null; child = ancestor, ancestor = ancestor.Parent)
-            {
-                if (add != null || remove != null)
-                {
-                    if (add != null)
-                        ancestor.Set.Or(add);
-                    if (remove != null)
-                        ancestor.Set.Exclude(remove);
-                    ancestor.UpdateWidthProperties();
-                }
-                else
-                    ancestor.UpdateWidthProperties(false);
-            }
         }
     }
 }

@@ -35,20 +35,6 @@ namespace BranchDecomposition.DecompositionTrees
 
         public bool IsLeaf { get { return this.Left == null; } }
 
-        // The nodes in the entire tree exluding the subtree rooted in this node.
-        public IEnumerable<DecompositionNode> TreeExcludingSubTree
-        {
-            get
-            {
-                for (DecompositionNode node = this; node != null && !node.IsRoot; node = node.Parent)
-                {
-                    foreach (DecompositionNode child in node.Sibling.SubTree(TreeTraversal.ChildrenFirst))
-                        yield return child;
-                    yield return node.Parent;
-                }
-            }
-        }
-
         // The vertex field is only set for leaf nodes.
         protected Vertex vertex { get; }
 
@@ -60,7 +46,7 @@ namespace BranchDecomposition.DecompositionTrees
             this.Set = set;
         }
 
-        public DecompositionNode(Vertex vertex, int index, DecompositionTree tree) : this(new BitSet(tree.Size, vertex.Index), index, tree)
+        public DecompositionNode(Vertex vertex, int index, DecompositionTree tree) : this(new BitSet(tree.VertexCount, vertex.Index), index, tree)
         {
             this.vertex = vertex;
         }

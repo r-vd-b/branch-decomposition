@@ -12,10 +12,10 @@ namespace BranchDecomposition.DecompositionTrees
         public WidthParameter WidthParameter { get; }
         public DecompositionNode[] Nodes { get; }
         public DecompositionNode Root { get; protected set; }
-        public int Size { get { return this.Graph.Vertices.Count; } }
+        public int VertexCount { get { return this.Graph.Vertices.Count; } }
 
         public double Width { get { return this.Root.SubTreeWidth; } }
-        public double Cost { get { return ComputeCost(this.Root.SubTreeWidth, this.Size, this.Root.SubTreeSum, this.Root?.Right?.Width ?? 0); } }
+        public double Cost { get { return ComputeCost(this.Root.SubTreeWidth, this.VertexCount, this.Root.SubTreeSum, this.Root?.Right?.Width ?? 0); } }
         
         public DecompositionTree(Graph graph, WidthParameter parameter)
         {

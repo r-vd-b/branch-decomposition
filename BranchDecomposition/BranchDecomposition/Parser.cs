@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using BranchDecomposition.DecompositionTrees;
+using BranchDecomposition.WidthParameters;
 
 namespace BranchDecomposition
 {
@@ -12,15 +14,15 @@ namespace BranchDecomposition
         /// </summary>
         /// <param name="path">The path to the file.</param>
         /// <returns>The resulting graph.</returns>
-        public static Graph ParseDGF(string path)
+        public static Graph ParseGraphFromDGF(string path)
         {
             string line;
             char[] separators = new char[1] { ' ' };
 
             Graph graph = new Graph();
-            int vertexcount = 0;
 
             Dictionary<string, Vertex> verticesByName = new Dictionary<string, Vertex>();
+            int graphsize = -1;
 
             using (StreamReader reader = new StreamReader(path))
             {
@@ -34,23 +36,23 @@ namespace BranchDecomposition
                     switch (command)
                     {
                         case 'p':
-                            vertexcount = int.Parse(parts[2]);
+                            graphsize = int.Parse(parts[2]);
                             break;
                         case 'n':
                             string name = parts[1];
                             if (!verticesByName.ContainsKey(name))
-                                verticesByName[name] = graph.AddVertex(name, vertexcount);
+                                verticesByName[name] = graph.AddVertex(name);
                             break;
                         case 'e':
                             string v1 = parts[1];
                             if (!verticesByName.ContainsKey(v1))
-                                verticesByName[v1] = graph.AddVertex(v1, vertexcount);
+                                verticesByName[v1] = graph.AddVertex(v1);
 
                             string v2 = parts[2];
                             if (!verticesByName.ContainsKey(v2))
-                                verticesByName[v2] = graph.AddVertex(v2, vertexcount);
+                                verticesByName[v2] = graph.AddVertex(v2);
 
-                            // Prevent duplicate edges
+                            // Prevent duplicate edges.
                             Vertex v = verticesByName[v1];
                             bool duplicate = false;
                             foreach (Vertex w in v.AdjacencyList)
@@ -69,11 +71,51 @@ namespace BranchDecomposition
                 }
             }
 
-            // Add missing vertices
-            while (graph.Vertices.Count < vertexcount)
-                graph.AddVertex("dummy_" + (vertexcount - graph.Vertices.Count), vertexcount);
+            // Insert zero-degree vertices.
+            int counter = 0;
+            while (graph.Vertices.Count < graphsize)
+            {
+                string name;
+                do
+                    name = "dummy_" + counter++;
+                while (verticesByName.ContainsKey(name));
+                verticesByName[name] = graph.AddVertex(name);
+            }
+
+            // Update all the indices.
+            if (graph.RequiresIndexing)
+                graph.UpdateIndices();
 
             return graph;
+        }
+
+        /// <summary>
+        /// Converts a graph in DGF-format to DOT-format for easy visualisation. Note that degree-zero vertices are omitted.
+        /// </summary>
+        /// <param name="input">The path to the input graph in DGF-format.</param>
+        /// <param name="output">The path to the output file in DOT-format.</param>
+        public static void ConvertDGFToDOT(string input, string output)
+        {
+            char[] separator = new char[] { ' ' };
+
+            using (StreamReader reader = new StreamReader(input))
+            {
+                using (StreamWriter writer = new StreamWriter(output))
+                {
+                    writer.WriteLine($"graph {Path.GetFileNameWithoutExtension(input)} {{");
+
+                    string inputline = string.Empty;
+                    while ((inputline = reader.ReadLine()) != null)
+                    {
+                        if (inputline.Length > 0 && inputline[0] == 'e')
+                        {
+                            string[] parts = inputline.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+                            writer.WriteLine($"\t{parts[1]} -- {parts[2]}");
+                        }
+                    }
+                    writer.WriteLine("}");
+                }
+            }
         }
     }
 }

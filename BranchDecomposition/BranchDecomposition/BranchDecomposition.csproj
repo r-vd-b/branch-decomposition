@@ -62,9 +62,15 @@
     <Compile Include="ImprovementHeuristics\LocalSearchOperation.cs" />
     <Compile Include="ImprovementHeuristics\LocalSearchOperator.cs" />
     <Compile Include="ImprovementHeuristics\OptimalOrderedTree.cs" />
+    <Compile Include="ImprovementHeuristics\SwapOperator.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReductionRules\Reduction.cs" />
+    <Compile Include="ReductionRules\ReductionRule.cs" />
+    <Compile Include="ReductionRules\RemoveDegreeOneRule.cs" />
+    <Compile Include="ReductionRules\RemoveDegreeZeroRule.cs" />
+    <Compile Include="ReductionRules\RemoveTwinRule.cs" />
     <Compile Include="WidthParameters\BooleanWidth.cs" />
     <Compile Include="WidthParameters\MaximumMatchingWidth.cs" />
     <Compile Include="WidthParameters\RankWidth.cs" />

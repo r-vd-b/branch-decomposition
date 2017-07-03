@@ -9,29 +9,54 @@ namespace BranchDecomposition.ImprovementHeuristics
 {
     class SwapOperation : LocalSearchOperation
     {
-        public DecompositionNode SelectedNodeA { get; }
-        public DecompositionNode SelectedNodeB { get; }
+        public DecompositionNode SelectedNodeLeft { get; }
+        public DecompositionNode SelectedNodeRight { get; }
 
-        public SwapOperation(DecompositionTree tree, DecompositionNode nodeA, DecompositionNode nodeB) : base(tree)
+        public SwapOperation(DecompositionTree tree, DecompositionNode left, DecompositionNode right) : base(tree)
         {
-            this.SelectedNodeA = nodeA;
-            this.SelectedNodeB = nodeB;
+            this.SelectedNodeLeft = left;
+            this.SelectedNodeRight = right;
         }
 
         public override double Execute()
         {
-            this.updateTree(this.SelectedNodeA, this.SelectedNodeB);
+            this.updateTree(this.SelectedNodeLeft, this.SelectedNodeRight);
             return base.Execute();
         }
 
         public override void Revert()
         {
-            this.updateTree(this.SelectedNodeA, this.SelectedNodeB);
+            this.updateTree(this.SelectedNodeLeft, this.SelectedNodeRight);
         }
 
         protected override double computeCost()
         {
-            return base.computeCost();
+            double maximum = Math.Max(this.SelectedNodeLeft.SubTreeWidth, this.SelectedNodeRight.SubTreeWidth), 
+                sum = this.SelectedNodeLeft.SubTreeSum + this.SelectedNodeRight.SubTreeSum;
+
+            // Find the first common ancestor of a and b.
+            DecompositionNode common = this.findCommonAncestor(this.SelectedNodeLeft, this.SelectedNodeRight);
+            // Compute the width of the ancestors of a up to the common ancestor.
+            this.computeWidthAncestors(this.SelectedNodeLeft, common, this.SelectedNodeRight.Set, this.SelectedNodeLeft.Set, ref maximum, ref sum);
+            // Compute the width of the ancestors of b up to the common ancestor.
+            this.computeWidthAncestors(this.SelectedNodeRight, common, this.SelectedNodeLeft.Set, this.SelectedNodeRight.Set, ref maximum, ref sum);
+
+            // Compute the width of the first common ancestor.
+            if (maximum < common.Width)
+                maximum = common.Width;
+            sum += common.Width;
+            
+            // Compute the width of the remaining common ancestors.
+            this.computeWidthAncestors(common, null, null, null, ref maximum, ref sum);
+
+            double topwidth = this.Tree.Root.Right.Width;
+            if (common.IsRoot)
+            {
+                BitSet set = this.Tree.Root.Right.Set - this.SelectedNodeRight.Set | this.SelectedNodeLeft.Set;
+                topwidth = this.Tree.WidthParameter.GetWidth(this.Tree.Graph, set);
+            }
+
+            return DecompositionTree.ComputeCost(maximum, this.Tree.VertexCount, sum, topwidth);
         }
 
         private void updateTree(DecompositionNode a, DecompositionNode b)
@@ -41,61 +66,21 @@ namespace BranchDecomposition.ImprovementHeuristics
             DecompositionNode oldParentB = b.Parent;
             Branch            oldBranchB = b.Branch;
 
-            //swap position of the subtrees
+            // Find the first common ancestor of a and b.
+            DecompositionNode common = this.findCommonAncestor(a, b);
+
+            // Swap position of the subtrees.
             this.Tree.Attach(oldParentA, b, oldBranchA);
             this.Tree.Attach(oldParentB, a, oldBranchB);
 
-            //update only those widths that have changed; does this bottom-up to facilitate passing maximums and sums upwards.
-//Is the width stored in a node the width of the edge between it and its parent?
-            DecompositionNode commonAncestor = findCommonAncestor(a, b);
-
-            DecompositionNode currentNode = a.Parent;
-            do //go up from node A until we find common ancestor, update along the way
-            {
-                currentNode.UpdateWidthProperties();
-                currentNode = currentNode.Parent;
-            } while (currentNode != commonAncestor);
-
-            currentNode = b.Parent;
-            do
-            {
-                currentNode.UpdateWidthProperties();
-                currentNode = currentNode.Parent;
-            } while (currentNode != commonAncestor);
-
-            //update common ancestor
-            commonAncestor.UpdateWidthProperties();
-
-            //all edges with possibly different score have been recalculated, so pass the maximums and sums up to the root
-            this.updateAncestors(commonAncestor, null, null, null);
-        }
-
-        private DecompositionNode findCommonAncestor(DecompositionNode n1, DecompositionNode n2)
-        {
-            for (DecompositionNode ancestor = n1; ancestor != null; ancestor = ancestor.Parent)
-                if (ancestor.Set.IsSupersetOf(n2.Set))
-                    return ancestor;
-            return null;
-        }
-
-        private void updateAncestors(DecompositionNode child, DecompositionNode end, BitSet add, BitSet remove)
-        {
-            if (child == null)
-                return;
-
-            for (DecompositionNode ancestor = child.Parent; ancestor != end && ancestor != null; child = ancestor, ancestor = ancestor.Parent)
-            {
-                if (add != null || remove != null)
-                {
-                    if (add != null)
-                        ancestor.Set.Or(add);
-                    if (remove != null)
-                        ancestor.Set.Exclude(remove);
-                    ancestor.UpdateWidthProperties();
-                }
-                else
-                    ancestor.UpdateWidthProperties(false);
-            }
+            // Update the ancestors of a up to the common ancestor.
+            this.updateAncestors(a, common, a.Set, b.Set);
+            // Update the ancestors of b up to the common ancestor.
+            this.updateAncestors(b, common, b.Set, a.Set);
+            // Update the first common ancestor.
+            common.UpdateWidthProperties(false);
+            // Update the remaining common ancestors.
+            this.updateAncestors(common, null, null, null);
         }
     }
 }

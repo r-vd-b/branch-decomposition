@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BranchDecomposition.ReductionRules;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ namespace BranchDecomposition.WidthParameters
     /// </remarks>
     class RankWidth : WidthParameter
     {
-        public RankWidth() : base() { this.Name = "rank-width"; }
+        public RankWidth() : base(new ReductionRule[] { new RemoveDegreeZeroRule(), new RemoveDegreeOneRule(), new RemoveTwinRule() }) { this.Name = "rank-width"; }
 
         protected override double computeWidth(Graph graph, BitSet left, BitSet right)
         {

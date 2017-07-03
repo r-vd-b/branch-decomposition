@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BranchDecomposition.ReductionRules;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,7 @@ namespace BranchDecomposition.WidthParameters
     /// </summary>
     class MaximumMatchingWidth : WidthParameter
     {
-        public MaximumMatchingWidth() : base() { this.Name = "maximum-matching-width"; }
+        public MaximumMatchingWidth() : base(new ReductionRule[] { new RemoveDegreeZeroRule(), new RemoveDegreeOneRule() }) { this.Name = "maximum-matching-width"; }
 
         protected override double computeWidth(Graph graph, BitSet left, BitSet right)
         {
